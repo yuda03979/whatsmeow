@@ -99,6 +99,19 @@ type Client struct {
 	pendingPhoneRerequests             map[types.MessageID]context.CancelFunc
 	pendingPhoneRerequestsLock         sync.RWMutex
 
+	// SkipPreKeyOnGroupUnavailable omits the one-time prekey bundle from retry receipts sent for
+	// group messages that failed to decrypt with no sender key. Such a receipt goes to the sender,
+	// who never distributed a sender key and cannot make use of the bundle, while GenOnePreKey
+	// stores a row per receipt marked as uploaded. Nothing removes those rows other than a
+	// successful prekey message naming that exact ID, so on a device in many high-traffic groups
+	// the table grows without bound and key IDs, which are three bytes on the wire
+	// (CHECK key_id < 16777216), advance monotonically towards that limit.
+	//
+	// The receipt itself is still sent, without the <keys> node -- the same shape emitted for a
+	// first retry that does not force the identity. Off by default; enabling it changes what is
+	// sent to peers.
+	SkipPreKeyOnGroupUnavailable bool
+
 	appStateProc     *appstate.Processor
 	appStateSyncLock sync.Mutex
 

@@ -465,6 +465,14 @@ func (cli *Client) clearDelayedMessageRequests() {
 	}
 }
 
+// skipRetryPreKey reports whether the one-time prekey bundle should be left out of a retry
+// receipt. It applies only when SkipPreKeyOnGroupUnavailable is set and the receipt is for a group
+// message that could not be decrypted for lack of a sender key: forceIncludeIdentity is set for
+// exactly that case, and the group check keeps broadcast lists on the default path.
+func skipRetryPreKey(enabled, forceIncludeIdentity bool, chat types.JID) bool {
+	return enabled && forceIncludeIdentity && chat.Server == types.GroupServer
+}
+
 // sendRetryReceipt sends a retry receipt for an incoming message.
 func (cli *Client) sendRetryReceipt(ctx context.Context, node *waBinary.Node, info *types.MessageInfo, forceIncludeIdentity bool) {
 	id, _ := node.Attrs["id"].(string)
@@ -515,7 +523,7 @@ func (cli *Client) sendRetryReceipt(ctx context.Context, node *waBinary.Node, in
 			{Tag: "registration", Content: registrationIDBytes[:]},
 		},
 	}
-	if retryCount > 1 || forceIncludeIdentity {
+	if (retryCount > 1 || forceIncludeIdentity) && !skipRetryPreKey(cli.SkipPreKeyOnGroupUnavailable, forceIncludeIdentity, info.Chat) {
 		if key, err := cli.Store.PreKeys.GenOnePreKey(ctx); err != nil {
 			cli.Log.Errorf("Failed to get prekey for retry receipt: %v", err)
 		} else if deviceIdentity, err := proto.Marshal(cli.Store.Account); err != nil {
