@@ -424,9 +424,14 @@ func (cli *Client) decryptMessages(ctx context.Context, info *types.MessageInfo,
 				go cli.sendRetryReceipt(context.WithoutCancel(ctx), node, info, isUnavailable)
 				go cli.sendAck(ctx, node, 0)
 			}
+			unavailableType := events.UnavailableTypeUnknown
+			if isUnavailable {
+				unavailableType = events.UnavailableTypeNoSenderKey
+			}
 			cli.dispatchEvent(&events.UndecryptableMessage{
 				Info:            *info,
 				IsUnavailable:   isUnavailable,
+				UnavailableType: unavailableType,
 				DecryptFailMode: events.DecryptFailMode(ag.OptionalString("decrypt-fail")),
 			})
 			return

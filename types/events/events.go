@@ -285,6 +285,12 @@ type UnavailableType string
 const (
 	UnavailableTypeUnknown  UnavailableType = ""
 	UnavailableTypeViewOnce UnavailableType = "view_once"
+	// UnavailableTypeNoSenderKey is set when IsUnavailable was raised by a group message that could
+	// not be decrypted for lack of a sender key, rather than by an <unavailable/> stanza. The two
+	// reach the handler with the same IsUnavailable flag but come from different branches and are
+	// recovered differently, and without this they are indistinguishable when the stanza carries no
+	// type attribute.
+	UnavailableTypeNoSenderKey UnavailableType = "no_sender_key"
 )
 
 // UndecryptableMessage is emitted when receiving a new message that failed to decrypt.
