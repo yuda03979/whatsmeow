@@ -426,9 +426,14 @@ func (cli *Client) decryptMessages(ctx context.Context, info *types.MessageInfo,
 				metaNode := node.GetChildByTag("meta")
 				decryptFail = metaNode.AttrGetter().OptionalString("decrypt-fail")
 			}
+			unavailableType := events.UnavailableTypeUnknown
+			if isUnavailable {
+				unavailableType = events.UnavailableTypeNoSenderKey
+			}
 			evt := &events.UndecryptableMessage{
 				Info:            *info,
 				IsUnavailable:   isUnavailable,
+				UnavailableType: unavailableType,
 				DecryptFailMode: events.DecryptFailMode(decryptFail),
 			}
 			handlerFailed := cli.dispatchEvent(evt)
